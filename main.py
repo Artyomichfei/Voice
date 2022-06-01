@@ -3,6 +3,7 @@ from vosk import Model, KaldiRecognizer
 from os import path
 from pyaudio import PyAudio, paInt16
 import json
+from pyowm import OWM
 
 der = None
 audio_01 = None
@@ -21,9 +22,42 @@ def inz(dir):
  
 inz("model-ru")
 
+location = "Aachen,DE"
+
+api_key = "7d82be8c5d4c613d5c857c8dd0c84594"
+open_weather_map = OWM(api_key)
+open_weather_map.config['language'] = 'ru' # Язык результатов
+
+ # запрос данных о текущем состоянии погоды
+now = open_weather_map.weather_manager().weather_at_place(location)
+forecast = open_weather_map.weather_manager().forecast_at_place(location, '3h') # 3h вернет недельный, так как daily не работает 
+
+status = now.weather.detailed_status
+temperature = int(now.weather.temperature('celsius')["temp"])
+def status_1(status):
+    print("Сейчас за окном:", status)
+def temperature_1(temperature):
+    print("Температура:", temperature)
+
+def weather(w):
+    dates = set()
+    for precipitation in w:
+         dates.add(precipitation.reference_time('iso').split()[0])
+    for date in dates:
+        print(date)
+def prec():
+    if forecast.will_have_rain:
+        print("На неделе будет дождь" )
+        weather(forecast.when_rain())
+    elif forecast.will_have_snow:
+        print("На неделе будет снег" )
+        weather(forecast.when_snow())
+    else:
+        print("Осадков не будет на этой неделе")
+
 def hello():
     print("привет")
-commands = {"выход": {"func":exit, "param":0 }, "привет": {"func":hello, "param":None }}
+commands = {"выход": {"func":exit, "param":0 }, "привет": {"func":hello, "param":None }, "погода": { "func":status_1, "param": status}, "температура":{ "func":temperature_1, "param":temperature}, "осадки":{"func": prec, "param":None}}
 
 print("Начало работы")
 while(True):
