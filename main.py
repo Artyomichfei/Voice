@@ -4,9 +4,14 @@ from os import path
 from pyaudio import PyAudio, paInt16
 import json
 from pyowm import OWM
+from datetime import datetime
 
 der = None
 audio_01 = None
+
+with open("api_key", "r") as file:
+    weather_api_key = file.read()
+print("Используется такой ключ:", weather_api_key)
 
 def inz(dir):
     global der
@@ -24,8 +29,7 @@ inz("model-ru")
 
 location = "Aachen,DE"
 
-api_key = "7d82be8c5d4c613d5c857c8dd0c84594"
-open_weather_map = OWM(api_key)
+open_weather_map = OWM(weather_api_key)
 open_weather_map.config['language'] = 'ru' # Язык результатов
 
  # запрос данных о текущем состоянии погоды
@@ -46,18 +50,21 @@ def weather(w):
     for date in dates:
         print(date)
 def prec():
-    if forecast.will_have_rain:
+    if forecast.will_have_rain():
         print("На неделе будет дождь" )
         weather(forecast.when_rain())
-    elif forecast.will_have_snow:
+    elif forecast.will_have_snow():
         print("На неделе будет снег" )
         weather(forecast.when_snow())
     else:
         print("Осадков не будет на этой неделе")
 
+def time():
+    print(datetime.now())
+
 def hello():
     print("привет")
-commands = {"выход": {"func":exit, "param":0 }, "привет": {"func":hello, "param":None }, "погода": { "func":status_1, "param": status}, "температура":{ "func":temperature_1, "param":temperature}, "осадки":{"func": prec, "param":None}}
+commands = {"выход": {"func":exit, "param":0 }, "привет": {"func":hello, "param":None }, "погода": { "func":status_1, "param": status}, "температура":{ "func":temperature_1, "param":temperature}, "осадки":{"func": prec, "param":None}, "время": {"func": time, "param": None}}
 
 print("Начало работы")
 while(True):
