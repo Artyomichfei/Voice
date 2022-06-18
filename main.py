@@ -1,10 +1,17 @@
+from email.policy import default
 from logging import exception
+from re import A
 from vosk import Model, KaldiRecognizer
 from os import path
 from pyaudio import PyAudio, paInt16
 import json
 from pyowm import OWM
 from datetime import datetime
+import speak
+import os
+import signal
+import subprocess
+
 
 der = None
 audio_01 = None
@@ -24,7 +31,9 @@ def inz(dir):
     # PyAudio().open(format=paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8000)
     audio_01 = PyAudio().open(format=paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8000)
     audio_01.start_stream()
- 
+
+counts = {1:"первого",2:"второго",3:"третьего",4:"четвёртого",5:"пятого",6:"шестого",7:"седьмого",8:"восьмого",9:"девятого",10:"десятого",11:"одиннадцатого",12:"двенадцатого",13:"тринадцатого",14:"четырнадцатого",15:"пятнадцатого",16:"шеснадцатого",17:"семнадцатого",18:"восемнадцатого",19:"девятнадцатого",20:"двадцатого",21:"двадцатьпервого",22:"двадцатьвторого",23:"двадцатьтретьего",24:"двадцатьчетвёртого",25:"двадцатьпятого",26:"двадцатьшестого",27:"двадцатьседьмое",28:"двадцатьвосьмого",29:"двадцатьдевятое",30:"тридцатого",31:"тридцатьпервого"}
+
 inz("model-ru")
 
 location = "Aachen,DE"
@@ -32,43 +41,81 @@ location = "Aachen,DE"
 open_weather_map = OWM(weather_api_key)
 open_weather_map.config['language'] = 'ru' # Язык результатов
 
- # запрос данных о текущем состоянии погоды
-now = open_weather_map.weather_manager().weather_at_place(location)
-forecast = open_weather_map.weather_manager().forecast_at_place(location, '3h') # 3h вернет недельный, так как daily не работает 
-
-status = now.weather.detailed_status
-temperature = int(now.weather.temperature('celsius')["temp"])
-def status_1(status):
-    print("Сейчас за окном:", status)
-def temperature_1(temperature):
-    print("Температура:", temperature)
+def status_1():
+    now = open_weather_map.weather_manager().weather_at_place(location)
+    status = now.weather.detailed_status
+    speak.talk(f"Сейчас за окном:{status}")
+def temperature_1():
+    now = open_weather_map.weather_manager().weather_at_place(location)
+    temperature = int(now.weather.temperature('celsius')["temp"])
+    speak.talk(f"Температура:{temperature} по цельсию")
 
 def weather(w):
     dates = set()
     for precipitation in w:
-         dates.add(precipitation.reference_time('iso').split()[0])
+         dates.add(datetime.fromisoformat(precipitation.reference_time('iso')).replace(tzinfo=None).day)
+    dates = list(dates)
+    speech = "Он будет "
     for date in dates:
-        print(date)
+        speech += counts[date] + " "
+        print(counts[date])
+    speech += "числа"
+    if len(dates):
+        speak.talk(speech)
+     # print(dates[0:len_1])
 def prec():
+    forecast = open_weather_map.weather_manager().forecast_at_place(location, '3h')
     if forecast.will_have_rain():
-        print("На неделе будет дождь" )
+        speak.talk("На неделе будет дождь" )
         weather(forecast.when_rain())
     elif forecast.will_have_snow():
-        print("На неделе будет снег" )
+        speak.talk("На неделе будет снег" )
         weather(forecast.when_snow())
     else:
-        print("Осадков не будет на этой неделе")
+        speak.talk("Осадков не будет на этой неделе")
+
+mus_ind = None
+def music_start():
+    global mus_ind
+    mus_ind = subprocess.Popen("C:/MPC-HC64/mpc-hc64_nvo.exe G:/Музыка") 
+
+def music_stop():
+    global mus_ind
+    mus_ind.terminate()
+    mus_ind = None
 
 def time():
-    print(datetime.now())
+    if text == "время":
+        time_2 = datetime.now()
+        result = "Сейчас: "
+        result += str(time_2.hour)
+        if  time_2.hour == (2,3,4,22,23,24) :
+            result += " часа"
+            speak.talk(result)
+        if 4 > time_2.hour < 21 or time_2.hour == 0:
+            result += " часов"
+            speak.talk(result)
+        if time_2.hour ==(1, 21):
+            result += " час"
+            speak.talk(result)
+        # print(f"Сегодня: {time_2.hour}")
 
 def hello():
-    print("привет")
-commands = {"выход": {"func":exit, "param":0 }, "привет": {"func":hello, "param":None }, "погода": { "func":status_1, "param": status}, "температура":{ "func":temperature_1, "param":temperature}, "осадки":{"func": prec, "param":None}, "время": {"func": time, "param": None}}
+    speak.talk("привет")
+commands = {"выход": {"func":exit, "param":0 }, 
+"привет": {"func":hello, "param":None }, 
+"погода": { "func":status_1, "param": None},
+"температура":{ "func":temperature_1, "param":None}, 
+"осадки":{"func": prec, "param":None}, 
+"время": {"func": time, "param": None}, 
+"старт":{"func": music_start , "param": None},
+"конец":{"func": music_stop, "param":None}
+}
 
-print("Начало работы")
+speak.init()
+speak.talk("Начало работы")
 while(True):
-    voice = audio_01.read(4000)
+    voice = audio_01.read(4000, exception_on_overflow = False)
     if len(voice) == 0:
         break
     if der.AcceptWaveform(voice):
@@ -81,4 +128,5 @@ while(True):
                     command["func"]()
                 else:    
                     command["func"](command["param"])
+
 
