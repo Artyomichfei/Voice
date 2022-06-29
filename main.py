@@ -11,7 +11,7 @@ import speak
 import os
 import signal
 import subprocess
-
+import pyautogui
 
 der = None
 audio_01 = None
@@ -84,6 +84,24 @@ def music_stop():
     mus_ind.terminate()
     mus_ind = None
 
+def volumeup():
+    pyautogui.press("volumeup", presses=3)
+
+def volumedown():
+    pyautogui.press("volumedown", presses=3)
+
+def volumemute():
+    pyautogui.press("volumemute")
+
+def nexttrack():
+    pyautogui.press("nexttrack")
+
+def prevtrack():
+    pyautogui.press("prevtrack")
+
+def pause():
+    pyautogui.press("Space")
+
 def time():
     if text == "время":
         time_2 = datetime.now()
@@ -109,8 +127,14 @@ commands = {"выход": {"func":exit, "param":0 },
 "осадки":{"func": prec, "param":None}, 
 "время": {"func": time, "param": None}, 
 "старт":{"func": music_start , "param": None},
-"конец":{"func": music_stop, "param":None}
-}
+"конец":{"func": music_stop, "param":None},
+"громче":{"func": volumeup, "param": None},
+"тише":{"func":volumedown, "param":None},
+"звук":{"func":volumemute, "param": None},
+"следующий":{"func":nexttrack, "param":None},
+"предыдущий":{"func": prevtrack, "param":None},
+"пауза":{"func":pause,"param":None},
+} 
 
 speak.init()
 speak.talk("Начало работы")
