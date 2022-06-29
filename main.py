@@ -100,7 +100,7 @@ def prevtrack():
     pyautogui.press("prevtrack")
 
 def pause():
-    pyautogui.press("Space")
+    pyautogui.press("playpause")
 
 def time():
     if text == "время":
